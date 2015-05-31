@@ -3,6 +3,8 @@
 //  SKPanoramaView
 //
 //  Created by Sachin Kesiraju on 1/5/15.
+//  Modified by toureek        on 31/5/15
+//  Make ImageView Run From Left to Right
 //  Copyright (c) 2015 Sachin Kesiraju. All rights reserved.
 //
 
@@ -11,6 +13,9 @@
 static const CGFloat SKRotationMinimumTreshold = 0.1f;
 static const CGFloat SKAnimationUpdateInterval = 1 / 100;
 static const CGFloat SKPanoramaRotationFactor = 4.0f;
+
+#define Screen_height  [[UIScreen mainScreen] bounds].size.height
+#define Screen_width  [[UIScreen mainScreen] bounds].size.width
 
 @interface SKPanoramaView ()
 
@@ -27,7 +32,9 @@ static const CGFloat SKPanoramaRotationFactor = 4.0f;
 
 @end
 
-@implementation SKPanoramaView
+@implementation SKPanoramaView {
+    CGFloat viewWidth;
+}
 
 - (instancetype)initWithFrame:(CGRect)frame
 {
@@ -73,12 +80,15 @@ static const CGFloat SKPanoramaRotationFactor = 4.0f;
     _image = image;
     
     CGFloat width = _viewFrame.size.height / _image.size.height * _image.size.width;
+    viewWidth = width;
+    NSLog(@"%.2f", width);
     [_imageView setFrame:CGRectMake(0, 0, width, _viewFrame.size.height)];
     [_imageView setBackgroundColor:[UIColor blackColor]];
     [_imageView setImage:_image];
     
     _scrollView.contentSize = CGSizeMake(_imageView.frame.size.width, _scrollView.frame.size.height);
-    _scrollView.contentOffset = CGPointMake((_scrollView.contentSize.width - _scrollView.frame.size.width), 0);
+    _scrollView.contentOffset = CGPointMake((_scrollView.frame.size.width - _scrollView.contentSize.width), 0);
+    [_scrollView setContentOffset:CGPointMake(0, 0) animated:YES];
     
     _motionRate = _image.size.width / _viewFrame.size.width * SKPanoramaRotationFactor;
 }
@@ -92,7 +102,7 @@ static const CGFloat SKPanoramaRotationFactor = 4.0f;
         _animationDuration = 10.0f; //Default
     }
     
-    _timer = [NSTimer timerWithTimeInterval:SKAnimationUpdateInterval target:self selector:@selector(monitor) userInfo:nil repeats:YES];
+    _timer = [NSTimer timerWithTimeInterval:SKAnimationUpdateInterval target:self selector:@selector(monitor) userInfo:nil repeats:NO];
     [[NSRunLoop mainRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
 }
 
@@ -106,11 +116,13 @@ static const CGFloat SKPanoramaRotationFactor = 4.0f;
         } else if (offsetX < _minimumXOffset) {
             offsetX = _minimumXOffset;
         }
+        _scrollView.contentMode = UIViewContentModeLeft;
+        NSLog(@"%.2f, %.2f", _scrollView.contentOffset.x, _scrollView.contentOffset.y);
         [UIView animateWithDuration:self.animationDuration
                               delay:0.0f
-                            options:UIViewAnimationOptionRepeat| UIViewAnimationOptionAutoreverse
+                            options:UIViewAnimationOptionBeginFromCurrentState
                          animations:^{
-                             [_scrollView setContentOffset:CGPointMake(offsetX, 0) animated:NO];
+                             [_scrollView setContentOffset:CGPointMake(viewWidth-Screen_width, 0) animated:NO];
                          }
                          completion:nil];
     }
@@ -119,6 +131,8 @@ static const CGFloat SKPanoramaRotationFactor = 4.0f;
 - (void) stopAnimating
 {
     [_timer invalidate];
+    _timer = nil;
+    
 }
 
 @end
